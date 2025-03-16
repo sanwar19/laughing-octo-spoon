@@ -1,2 +1,3 @@
 # laughing-octo-spoon
-my cheat-sheets
+code snippets
+notes to lookup for different topics solutions
