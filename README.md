@@ -1,6 +1,6 @@
 # Laughing Octo Spoon
 
-Welcome to the Laughing Octo Spoon project.It is kind of a cheat-sheets for different things I'm working through.!
+Welcome to the Laughing Octo Spoon project.*It is kind of a cheat-sheets for different things I'm working through.!*
 This repository contains various code snippets and notes for different topics and solutions.
 
 ## Table of Contents
