@@ -50,8 +50,51 @@ The most commonly used Podman commands, grouped by type:
 | `podman network disconnect`| Disconnect a container from a network.           | `podman network disconnect NETWORK_NAME CONTAINER_ID` |
 
 ---
-
 ### 3. Podman Persistent Storage: Concepts and Best Practices
+
+#### **Key Concepts**
+- **Volumes**: Podman-managed storage locations that persist data independently of container lifecycles.
+- **Bind Mounts**: Map a host directory or file to a container for direct access.
+- **OverlayFS**: Efficient filesystem layering used by Podman.
+- **Volume Mount Options**: Control how volumes and bind mounts behave using options with the `-v` or `--mount` flag.
+
+#### **Volume Mount Options**
+You can specify mount options to control access, consistency, and behavior:
+
+| **Option**         | **Description**                                                                 | **Example**                                      |
+|--------------------|---------------------------------------------------------------------------------|--------------------------------------------------|
+| `ro`               | Mount the volume or bind mount as read-only.                                    | `-v my_volume:/data:ro`                          |
+| `rw`               | Mount as read-write (default).                                                  | `-v my_volume:/data:rw`                          |
+| `z`                | Shared SELinux label for use by multiple containers.                            | `-v /host/path:/container/path:z`                |
+| `Z`                | Private SELinux label for use by a single container.                            | `-v /host/path:/container/path:Z`                |
+| `nocopy`           | Prevent Podman from copying data from the container path to the volume on mount.| `-v my_volume:/data:nocopy`                      |
+| `uid`/`gid`        | Set the user/group ownership of the mount.                                      | `-v my_volume:/data:uid=1000,gid=1000`           |
+| `U`                | Automatically change ownership of the volume content to match the container user| `-v my_volume:/data:U`                           |
+
+You can combine options with commas: `-v my_volume:/data:ro,z`
+
+#### **Best Practices**
+1. Use named volumes for portability: `podman volume create my_volume`.
+2. Avoid storing critical data in containers; use volumes or bind mounts.
+3. Secure sensitive data with proper permissions and SELinux options (`z`/`Z`).
+4. Regularly back up persistent data: `podman volume export my_volume > backup.tar`.
+5. Use bind mounts for development: `podman run -v /host/path:/container/path IMAGE_NAME`.
+6. Monitor volume usage: `podman volume inspect my_volume`.
+7. Use `ro` for read-only data to improve security.
+8. Prefer `--mount` syntax for complex options:  
+    `--mount type=volume,source=my_volume,target=/data,readonly`
+
+#### **Common Commands**
+| **Command**               | **Description**                                   | **Example**                                   |
+|----------------------------|---------------------------------------------------|-----------------------------------------------|
+| `podman volume create`     | Create a new named volume.                        | `podman volume create my_volume`              |
+| `podman volume ls`         | List all available volumes.                       | `podman volume ls`                            |
+| `podman volume inspect`    | Inspect details of a volume.                      | `podman volume inspect my_volume`             |
+| `podman volume rm`         | Remove a named volume.                            | `podman volume rm my_volume`                  |
+| `podman volume export`     | Export a volume to a tar archive.                 | `podman volume export my_volume > backup.tar` |
+| `podman volume import`     | Import a volume from a tar archive.               | `podman volume import my_volume < backup.tar` |
+
+---
 
 #### **Key Concepts**
 - **Volumes**: Podman-managed storage locations that persist data independently of container lifecycles.
