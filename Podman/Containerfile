@@ -1,0 +1,25 @@
+# Use an official base image
+FROM  docker.io/library/httpd:alpine
+
+# Set maintainer label
+LABEL maintainer="demo image"
+
+# Install dependencies (example: curl)
+#RUN apk add --no-cache curl
+
+# Set working directory
+WORKDIR /usr/local/apache2/htdocs
+# Set environment variables (if any)    
+ENV http_port=80
+# Expose port 80
+EXPOSE ${http_port}
+# Copy files (if any)
+# COPY . /app
+COPY ./index.html ./index.html
+
+# Set default command
+CMD ["httpd", "-D", "FOREGROUND"    ]
+
+# Healthcheck (optional)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:${http_port}/ || exit 1
