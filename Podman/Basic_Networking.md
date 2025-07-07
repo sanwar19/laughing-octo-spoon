@@ -39,16 +39,14 @@ the container on an internal bridge network, which is then connected to the inte
 via Network Address Translation(NAT).  We also see users wanting to use `macvlan`
 for networking as well. The `macvlan` plugin forwards an entire network interface
 from the host into the container, allowing it access to the network the host is connected
-to. And finally, the default network configuration for rootless containers is slirp4netns.
+to. And finally, the default network configuration for rootless containers is `slirp4netns`.
 The slirp4netns network mode has limited capabilities but can be run on users without
 root privileges. It creates a tunnel from the host into the container to forward
 traffic.
 
 ### Bridge
 
-A bridge network is defined as an internal network is created where both the
-container and host are attached.  Then this network is capable of allowing the containers
-to communicate outside the host.
+A bridge network is defined as an internal network is, created where both the container and host are attached.  Then this network is capable of allowing the containers to communicate outside the host.
 
 
 ![bridge_network](podman_bridge.png)
@@ -118,13 +116,11 @@ client can connect to the container.
 
 ```
 (rootful) $ sudo podman run -dt --name webserver -p 8080:80 quay.io/libpod/banner
-00f3440c7576aae2d5b193c40513c29c7964e96bf797cf0cc352c2b68ccbe66a
 ```
 
 Now run the container.
 ```
 $ podman run -dt --name webserver --network podman1 -p 8081:80 quay.io/libpod/banner
-269fd0d6b2c8ed60f2ca41d7beceec2471d72fb9a33aa8ca45b81dc9a0abbb12
 ```
 Note in the above run command, the container’s port 80 (where the Nginx server is
 running) was mapped to the host’s port 8080.  Port 8080 was chosen to demonstrate
@@ -134,9 +130,10 @@ very well have been 80 as well (except for rootless users).
 To connect from an outside client to the webserver, simply point an HTTP client to
 the host’s IP address at port 8080 for rootful and port 8081 for rootless.
 ```
-(outside_host): $ curl 192.168.99.109:8080
+(outside_host): $ curl localhost:8080
 
-(outside_host): $ curl 192.168.99.109:8081
+(outside_host): $ curl 192.168:8081
+```
 
 ### Macvlan
 
@@ -189,40 +186,6 @@ Or if the system doesn't use systemd, start the daemon manually:
 ```
 $ /usr/libexec/podman/netavark dhcp-proxy --activity-timeout 0
 ```
-
-With CNI use:
-```
-$ sudo systemctl enable --now cni-dhcp.socket
-```
-Or if the system doesn't use systemd, start the daemon manually:
-```
-$ sudo /usr/libexec/cni/dhcp daemon
-```
-Note that depending on the distribution, the binary location may differ.
-
-Now run the container and be certain to attach it to the network we created earlier.
-```
-$ sudo podman run -dt --name webserver --network webnetwork quay.io/libpod/banner
-03d82083c434d7e937fc0b87c25401f46ab5050007df403bf988e25e52c5cc40
-[baude@localhost ~]$ sudo podman exec webserver ip address show eth0
-2: eth0@if3: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1500 qdisc noqueue state
-UP
-link/ether 0a:3c:e2:eb:87:0f brd ff:ff:ff:ff:ff:ff
-inet 192.168.99.186/24 brd 192.168.99.255 scope global eth0
-valid_lft forever preferred_lft forever
-inet6 fe80::83c:e2ff:feeb:870f/64 scope link
-valid_lft forever preferred_lft forever
-```
-Because the container has a routable IP address (on this network) and is not being
-managed by firewalld, no change to the firewall is needed.
-```
-(outside_host): $ curl http://192.168.99.186
-   ___           __
-  / _ \___  ___/ /_ _  ___ ____
- / ___/ _ \/ _  /  ' \/ _ `/ _ \
-/_/   \___/\_,_/_/_/_/\_,_/_//_/
-```
-
 
 
 ### Slirp4netns
@@ -315,5 +278,46 @@ IP address (and DNS name if applicable) assigned to the Pod itself.
 
 For more information on container to container networking, see [Configuring container
 networking with Podman](https://www.redhat.com/sysadmin/container-networking-podman).
+
+
+### Slirp4netns and TAP Devices
+Slirp4netns is a user-mode networking tool that allows rootless containers to have network connectivity without requiring root privileges. It uses TAP (Terminal Access Point) devices to create a virtual network interface within the container's network namespace.
+
+### What is a TAP Device?
+A TAP device is a virtual network interface that operates at the data link layer (Layer 2) of the OSI model. It allows user-space programs to interact with network packets as if they were dealing with a physical network interface. TAP devices are commonly used in virtualized environments to provide network connectivity to virtual machines or containers.
+
+# How Slirp4netns Uses TAP ?
+
+When using slirp4netns (a user-mode networking tool for rootless containers), it creates a TAP device inside the container’s network namespace. This TAP device acts as the container’s network interface, and slirp4netns bridges it to the host’s network stack — all without needing root privileges.
+So yes — Slirp4netns creates a TAP device to simulate a network interface inside the container, allowing it to communicate with the outside world through a user-space bridge.
+
+## How TAP Devices Work togeether with Bridge Networking ?
+When using bridge networking with Podman, TAP devices play a crucial role in connecting the container's network namespace to the host's network. Here's how it works:
+
+[ VM or container ]
+        │
+     [ TAP ]
+        │
+     [ BRIDGE ]──[ eth0 (host NIC) ]
+        │
+     [ LAN / Internet ]
+In this setup, the TAP device acts as a virtual network interface for the container, while the bridge interface connects it to the host's network interface (e.g., `eth0`). The bridge allows multiple TAP devices (from different containers) to communicate with each other and with the host's network.
+
+## How TAP Devices Work with Bridge Networking in Podman
+When using bridge networking in Podman, TAP devices are created to allow containers to communicate with the host network and other containers. Here's a step-by-step explanation of how this works:
+   1. **TAP Device Creation**: When a container is started with bridge networking, Podman creates a TAP device within the container's network namespace. This TAP device acts as the container's network interface.
+   2. **Bridge Creation**: Podman also creates a bridge interface on the host (e.g., `br0`). This bridge acts as a virtual switch that connects multiple TAP devices and the host's network interface.
+   3. **Connecting TAP to Bridge**: The TAP device created for the container is added to the bridge interface. This allows the container to communicate with other devices on the bridge, including the host's network interface.
+   4. **Network Communication**: The bridge interface forwards packets between the TAP device and the host's network interface (e.g., `eth0`). This allows the container to access the LAN or Internet, as packets sent from the container through the TAP device are routed through the bridge to the host's network.
+   ## Real Life Example of TAP Device with Bridge Networking
+   When using Podman with root privileges, you can set up a TAP device and bridge networking to allow your containers or virtual machines to communicate with the outside world as if they were directly connected to your local area network (LAN).  
+   **Example:**
+   If you're running a Podman container or a virtual machine (VM) and want it to have its own IP address on your LAN, you can create a TAP device and a bridge. Here's how you might do it:
+     if you're using QEMU or Podman with root privileges, you might:
+         - Create a TAP device (tap0)
+         - Create a bridge (br0)
+         - Add tap0 and eth0 to br0
+      This lets your VM/container appear as a peer on your LAN, with its own IP address.
+
 
 
