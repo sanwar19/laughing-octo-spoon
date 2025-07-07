@@ -304,9 +304,9 @@ When using bridge networking in Podman, TAP devices are created to allow contain
    **Example:**
    If you're running a Podman container or a virtual machine (VM) and want it to have its own IP address on your LAN, you can create a TAP device and a bridge. Here's how you might do it:
      if you're using QEMU or Podman with root privileges, you might:
-       1. Create a TAP device (tap0)
-       2. Create a bridge (br0)
-       3. Add tap0 and eth0 to br0
+     1. Create a TAP device (tap0)
+     2. Create a bridge (br0)
+     3. Add tap0 and eth0 to br0
    This lets your VM/container appear as a peer on your LAN, with its own IP address.
 
 
