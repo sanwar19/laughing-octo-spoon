@@ -136,14 +136,11 @@ the host’s IP address at port 8080 for rootful and port 8081 for rootless.
 ```
 
 ### Macvlan
-
 With macvlan, the container is given access to a physical network interface on the
 host. This interface can configure multiple subinterfaces.  And each subinterface
 is capable of having its own MAC and IP address.  In the case of Podman containers,
 the container will present itself as if it is on the same network as the host.
-
 ![macvlan_network](podman_macvlan.png)
-
 In the illustration, outside clients will be able to access the web container by
 its IP address directly.  Usually the network information, including IP address,
 is leased from a DHCP server like most other network clients on the network.  If
@@ -196,7 +193,6 @@ the host.  Slirp4netns creates a TAP device in the container’s network namespa
 and connects to the usermode TCP/IP stack.  Consider the following illustration.
 
 ![slirp_network](podman_rootless_default.png)
-
 The unprivileged user on this laptop has created two containers: a DB container and
 a web container.  Both of these containers have the ability to access content on
 networks outside the laptop.  And outside clients can access the containers if the
@@ -240,19 +236,11 @@ From another rootless container, use the host’s IP address and port to communi
 between the two rootless containers successfully.
 ```
 $ podman run -it quay.io/libpod/banner curl http://192.168.99.109:8080
-   ___           __
-  / _ \___  ___/ /_ _  ___ ____
- / ___/ _ \/ _  /  ' \/ _ `/ _ \
-/_/   \___/\_,_/_/_/_/\_,_/_//_/
-```
 
+```
 From a client outside the host, the IP address and port can also be used:
 ```
 (outside_host): $ curl http://192.168.99.109:8080
-   ___           __
-  / _ \___  ___/ /_ _  ___ ____
- / ___/ _ \/ _  /  ' \/ _ `/ _ \
-/_/   \___/\_,_/_/_/_/\_,_/_//_/
 ```
 
 ## Communicating between containers and pods
@@ -294,6 +282,7 @@ So yes — Slirp4netns creates a TAP device to simulate a network interface insi
 ## How TAP Devices Work togeether with Bridge Networking ?
 When using bridge networking with Podman, TAP devices play a crucial role in connecting the container's network namespace to the host's network. Here's how it works:
 
+```
 [ VM or container ]
         │
      [ TAP ]
@@ -301,6 +290,7 @@ When using bridge networking with Podman, TAP devices play a crucial role in con
      [ BRIDGE ]──[ eth0 (host NIC) ]
         │
      [ LAN / Internet ]
+   ```
 In this setup, the TAP device acts as a virtual network interface for the container, while the bridge interface connects it to the host's network interface (e.g., `eth0`). The bridge allows multiple TAP devices (from different containers) to communicate with each other and with the host's network.
 
 ## How TAP Devices Work with Bridge Networking in Podman
